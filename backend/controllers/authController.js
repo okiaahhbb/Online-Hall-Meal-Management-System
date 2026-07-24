@@ -15,9 +15,12 @@ exports.register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const profilePicture = req.file ? `/uploads/profiles/${req.file.filename}` : null;
+
     const [result] = await pool.query(
-      'INSERT INTO users (student_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
-      [student_id || null, name, email, hashedPassword, role || 'student']
+      'INSERT INTO users (student_id, name, email, password, role, profile_picture) VALUES (?, ?, ?, ?, ?, ?)',
+      [student_id || null, name, email, hashedPassword, role || 'student', profilePicture]
     );
 
     res.status(201).json({ message: 'User registered', userId: result.insertId });
@@ -48,7 +51,13 @@ exports.login = async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_picture: user.profile_picture,
+      },
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

@@ -21,6 +21,8 @@ export default function StudentsTab({ getHeaders, API }) {
     block: '',
     address: ''
   });
+  const [profileFile, setProfileFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -46,6 +48,14 @@ export default function StudentsTab({ getHeaders, API }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -61,19 +71,41 @@ export default function StudentsTab({ getHeaders, API }) {
       block: '',
       address: ''
     });
+    setProfileFile(null);
+    setPreviewUrl(null);
     setEditingStudent(null);
     setMessage('');
+  };
+
+  const buildFormData = () => {
+    const fd = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      fd.append(key, value);
+    });
+    if (profileFile) {
+      fd.append('profilePicture', profileFile);
+    }
+    return fd;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     try {
+      const fd = buildFormData();
+      const headers = getHeaders();
+      const config = {
+        headers: {
+          ...headers.headers,
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+
       if (editingStudent) {
-        await axios.put(`${API}/students/${editingStudent.id}`, formData, getHeaders());
+        await axios.put(`${API}/students/${editingStudent.id}`, fd, config);
         setMessage('✅ Student updated successfully!');
       } else {
-        await axios.post(`${API}/students`, formData, getHeaders());
+        await axios.post(`${API}/students`, fd, config);
         setMessage('✅ Student registered successfully!');
       }
       setShowModal(false);
@@ -110,6 +142,8 @@ export default function StudentsTab({ getHeaders, API }) {
       block: student.block || '',
       address: student.address || ''
     });
+    setProfileFile(null);
+    setPreviewUrl(student.profile_picture ? `http://localhost:5000${student.profile_picture}` : null);
     setShowModal(true);
   };
 
@@ -168,6 +202,7 @@ export default function StudentsTab({ getHeaders, API }) {
           <table className="w-full text-sm">
             <thead className="bg-[#f0f7f3]">
               <tr className="text-left text-[#1b382b] text-xs uppercase">
+                <th className="p-2">Photo</th>
                 <th className="p-2">Name</th>
                 <th className="p-2">Student ID</th>
                 <th className="p-2">Email</th>
@@ -179,13 +214,26 @@ export default function StudentsTab({ getHeaders, API }) {
             <tbody className="divide-y divide-emerald-50">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center text-slate-400 text-sm py-8">
+                  <td colSpan={7} className="text-center text-slate-400 text-sm py-8">
                     {students.length === 0 ? 'No students found. Add a new student using the "Add Student" button.' : 'No matching students found.'}
                   </td>
                 </tr>
               ) : (
                 filtered.map((s) => (
                   <tr key={s.id} className="hover:bg-emerald-50/30 transition">
+                    <td className="p-2">
+                      {s.profile_picture ? (
+                        <img
+                          src={`http://localhost:5000${s.profile_picture}`}
+                          alt={s.name}
+                          className="w-8 h-8 rounded-full object-cover border border-emerald-200"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs text-emerald-600 font-bold">
+                          {s.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </td>
                     <td className="p-2 font-medium text-slate-700">{s.name}</td>
                     <td className="p-2 text-slate-500 text-xs">{s.student_id || '—'}</td>
                     <td className="p-2 text-slate-500 text-xs">{s.email}</td>
@@ -227,6 +275,29 @@ export default function StudentsTab({ getHeaders, API }) {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-3">
+
+              {/* Profile Picture Upload */}
+              <div className="flex items-center gap-4 pb-3 border-b border-gray-100">
+                <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl text-emerald-300">👤</span>
+                  )}
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">
+                    Profile Picture
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                    onChange={handleFileChange}
+                    className="text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] text-gray-400 font-bold uppercase">Full Name *</label>

@@ -4,6 +4,11 @@ import StudentApp from './pages/StudentApp';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LandingPage from './pages/LandingPage';
+import AboutUs from './pages/AboutUs';
+import ProvostMessage from './pages/ProvostMessage';
+import Notices from './pages/Notices';
+import Feedback from './pages/Feedback';
+import Contact from './pages/Contact';
 
 function AdminRoute() {
   const [admin, setAdmin] = useState(null);
@@ -37,6 +42,15 @@ function App() {
       
       {/* Unknown Route */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
+      <Route path="/about" element={<AboutUs />} />
+
+      <Route path="/provost" element={<ProvostMessage />} />
+
+
+      <Route path="/notices" element={<Notices />} />
+      <Route path="/feedback" element={<Feedback />} />
+      <Route path="/contact" element={<Contact />} />
     </Routes>
   );
 }
