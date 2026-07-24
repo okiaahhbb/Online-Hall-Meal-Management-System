@@ -43,3 +43,31 @@ CREATE TABLE bills (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_user_month (user_id, month)
 );
+
+CREATE TABLE admins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(50) DEFAULT 'dining_manager',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE hall_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  is_hall_closed BOOLEAN DEFAULT FALSE,
+  is_meal_off BOOLEAN DEFAULT FALSE,
+  note VARCHAR(255)
+);
+
+CREATE TABLE meal_rates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  breakfast_rate DECIMAL(10,2) DEFAULT 40.00,
+  lunch_rate DECIMAL(10,2) DEFAULT 40.00,
+  dinner_rate DECIMAL(10,2) DEFAULT 40.00
+);
+
+exit;
