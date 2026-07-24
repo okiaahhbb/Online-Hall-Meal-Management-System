@@ -6,6 +6,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [profileFile, setProfileFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [message, setMessage] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
@@ -20,6 +22,7 @@ export default function Profile() {
       });
       setProfile(res.data);
       setFormData(res.data);
+      setPreviewUrl(res.data.profile_picture ? `http://localhost:5000${res.data.profile_picture}` : null);
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
@@ -31,15 +34,36 @@ export default function Profile() {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setMessage('');
     try {
-      await axios.put('http://localhost:5000/api/profile/update', formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      const fd = new FormData();
+      const allowedFields = ['name', 'phone', 'father_name', 'mother_name', 'home_district', 'address', 'department', 'room_no', 'block'];
+      allowedFields.forEach((key) => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          fd.append(key, formData[key]);
+        }
+      });
+      if (profileFile) fd.append('profilePicture', profileFile);
+
+      await axios.put('http://localhost:5000/api/profile/update', fd, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        }
       });
       setMessage('✅ Profile updated successfully!');
       setEditing(false);
+      setProfileFile(null);
       fetchProfile();
     } catch (err) {
       setMessage('❌ ' + (err.response?.data?.message || 'Update failed'));
@@ -93,8 +117,7 @@ export default function Profile() {
   return (
     <div className="max-w-4xl mx-auto h-full overflow-y-auto pb-4">
       <div className="bg-white rounded-2xl shadow-sm border border-emerald-100/60 overflow-hidden">
-        
-        {/* Header */}
+
         <div className="bg-[#1b382b] px-6 py-4 flex justify-between items-center">
           <h2 className="text-lg font-bold text-white">👤 My Profile</h2>
           <button
@@ -112,19 +135,48 @@ export default function Profile() {
         )}
 
         <div className="p-6">
-          {/* Profile Picture & Name */}
-          <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-2xl font-bold text-emerald-700">
-              {profile.name?.charAt(0).toUpperCase() || '👤'}
+          {/* 🖼️ Big Photo + Info side-by-side (NEW LAYOUT) */}
+          <div className="flex flex-col sm:flex-row gap-6 pb-5 border-b border-gray-100">
+
+            <div className="flex flex-col items-center flex-shrink-0">
+              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl bg-emerald-50 border-4 border-emerald-100 overflow-hidden flex items-center justify-center shadow-sm">
+                {previewUrl ? (
+                  <img src={previewUrl} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl font-bold text-emerald-300">
+                    {profile.name?.charAt(0).toUpperCase() || '👤'}
+                  </span>
+                )}
+              </div>
+
+              {editing && (
+                <label className="mt-3 cursor-pointer text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition">
+                  📷 Change Photo
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">{profile.name}</h3>
-              <p className="text-sm text-gray-500">{profile.email}</p>
-              <p className="text-xs text-gray-400">ID: {profile.student_id || 'N/A'}</p>
+
+            <div className="flex-1 flex flex-col justify-center">
+              <h3 className="text-2xl font-bold text-gray-800">{profile.name}</h3>
+              <p className="text-sm text-gray-500 mt-1">{profile.email}</p>
+              <p className="text-xs text-gray-400 mt-1">Student ID: {profile.student_id || 'N/A'}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-medium">
+                  🏫 {profile.department || 'Dept N/A'}
+                </span>
+                <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-medium">
+                  🛏️ Room {profile.room_no || 'N/A'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Profile Info */}
           {editing ? (
             <form onSubmit={handleUpdate} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -217,7 +269,6 @@ export default function Profile() {
           )}
         </div>
 
-        {/* 🔑 Change Password & Contact Provost Section */}
         <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-4">
           <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex gap-3 flex-wrap">
@@ -247,7 +298,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* 🔑 Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
