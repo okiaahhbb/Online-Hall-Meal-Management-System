@@ -19,10 +19,9 @@ export default function MealManagement({
   currentDate, setCurrentDate, handleSelectSlot,
   selectedDate, meals, isEditing, currentSelectedStatus,
   saveStatus, errorMessage, toggleMeal, handleSave, handleChangeSelection,
-  calendarEvents, eventPropGetter, mealMeta, hallSettings
+  calendarEvents, eventPropGetter, mealMeta, hallSettings,
+  isTokenAlreadyTaken
 }) {
-  const isTokenAlreadyTaken = false; // Your logic here
-
   return (
     <div className="h-full flex flex-col gap-2">
       <div className="bg-white p-3 rounded-xl shadow-lg border border-emerald-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0">
@@ -81,6 +80,17 @@ export default function MealManagement({
                     <button onClick={handleSave} disabled={saveStatus === 'saving'} className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 rounded-lg shadow-sm transition disabled:opacity-50">
                       {saveStatus === 'saving' ? '⏳...' : '✅ Confirm'}
                     </button>
+                  )}
+
+                  {((saveStatus === 'saved') || (!isEditing && isTokenAlreadyTaken)) && currentSelectedStatus === 'editable' && (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-2 rounded-lg text-center text-[10px] leading-relaxed font-medium">
+                        🎫 <strong>Saved.</strong> You can still change it till 10:00 PM.
+                      </div>
+                      <button onClick={handleChangeSelection} className="w-full border border-emerald-500 text-emerald-600 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-50/30 transition">
+                        ✏️ Modify Settings
+                      </button>
+                    </div>
                   )}
 
                   {currentSelectedStatus === 'locked' && (

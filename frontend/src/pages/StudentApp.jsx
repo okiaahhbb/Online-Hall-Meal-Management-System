@@ -254,6 +254,14 @@ export default function StudentApp() {
   const unusedTokens = myTokens.filter(t => t.status === 'unused');
   const currentSelectedStatus = selectedDate ? getMealDateStatus(selectedDate) : null;
 
+  // 🎯 FIX: এই তারিখের জন্য আগে থেকে meal সেভ করা আছে কিনা চেক করা
+  const isTokenAlreadyTaken = selectedDate
+    ? allMeals.some((m) => {
+        const mDate = typeof m.date === 'string' ? m.date.split('T')[0] : getLocalDateStr(new Date(m.date));
+        return mDate === getLocalDateStr(selectedDate);
+      })
+    : false;
+
   const getCalendarEvents = () => {
     const events = [];
     const today = new Date();
@@ -313,7 +321,7 @@ export default function StudentApp() {
 
   return (
     <div className="min-h-screen bg-[#f0f7f3] flex flex-col font-sans antialiased text-gray-800 h-screen overflow-hidden">
-      
+
       {/* 🎨 Header - Dark Green */}
       <div className="bg-[#1b382b] text-white py-3 px-4 shadow-lg border-b-4 border-emerald-800/40 flex-shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left">
@@ -387,6 +395,7 @@ export default function StudentApp() {
               eventPropGetter={eventPropGetter}
               mealMeta={mealMeta}
               hallSettings={hallSettings}
+              isTokenAlreadyTaken={isTokenAlreadyTaken}
             />
           )}
 
